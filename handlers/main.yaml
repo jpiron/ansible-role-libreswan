@@ -12,12 +12,20 @@
     updated_ipsec_secrets: "{{ ipsec_secrets_creation.results
                                 | selectattr('changed')
                                 | map(attribute='item.key') }}"
+    deleted_ipsec_connections: "{{ ipsec_connections_deletion.results
+                                    | selectattr('changed')
+                                    | map(attribute='item.key') }}"
+    deleted_ipsec_secrets: "{{ ipsec_secrets_deletion.results
+                                | selectattr('changed')
+                                | map(attribute='item.key') }}"
   listen: "reload ipsec connections"
 
 - name: compute changed ipsec connections
   ansible.builtin.set_fact:
     changed_ipsec_connections: "{{ updated_ipsec_connections
                                     | union(updated_ipsec_secrets) }}"
+    deleted_ipsec_connections: "{{ deleted_ipsec_connections
+                                    | union(deleted_ipsec_secrets) }}"
   listen: "reload ipsec connections"
 
 - name: reread ipsec secret
@@ -30,6 +38,21 @@
   ansible.builtin.debug:
     msg: "Without check_mode `ipsec auto --rereadsecrets` would have been triggered."
   changed_when: true
+  listen: "reload ipsec connections"
+  when: ansible_check_mode
+
+- name: delete removed ipsec connection
+  ansible.builtin.command: ipsec auto --delete {{ item }}
+  changed_when: true
+  loop: "{{ deleted_ipsec_connections }}"
+  listen: "reload ipsec connections"
+  when: not ansible_check_mode
+
+- name: delete removed ipsec connection (check_mode)
+  ansible.builtin.debug:
+    msg: "Without check_mode `ipsec auto --delete {{ item }}` would have been triggered."
+  changed_when: true
+  loop: "{{ deleted_ipsec_connections }}"
   listen: "reload ipsec connections"
   when: ansible_check_mode
 
