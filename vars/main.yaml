@@ -1,0 +1,7 @@
+---
+all_ipsec_connections: "{{ ipsec_connections | dict2items }}"
+absent_ipsec_connections: "{{ all_ipsec_connections
+                              | selectattr('value.state', 'defined')
+                              | selectattr('value.state', 'equalto', 'absent') }}"
+present_ipsec_connections: "{{ all_ipsec_connections
+                                | difference(absent_ipsec_connections) }}"

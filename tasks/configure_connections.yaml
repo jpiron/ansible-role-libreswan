@@ -4,7 +4,7 @@
     src: connection.conf
     dest: "/etc/ipsec.d/{{ item.key }}.conf"
     mode: '0644'
-  loop: "{{ ipsec_connections | dict2items }}"
+  loop: "{{ present_ipsec_connections }}"
   register: ipsec_connections_creation
   notify: "{{ ipsec_handler }}"
 
@@ -13,6 +13,22 @@
     src: connection.secrets
     dest: "/etc/ipsec.d/{{ item.key }}.secrets"
     mode: '0600'
-  loop: "{{ ipsec_connections | dict2items }}"
+  loop: "{{ present_ipsec_connections }}"
   register: ipsec_secrets_creation
+  notify: "{{ ipsec_handler }}"
+
+- name: "remove ipsec conf files"
+  ansible.builtin.file:
+    path: "/etc/ipsec.d/{{ item.key }}.conf"
+    state: absent
+  loop: "{{ absent_ipsec_connections }}"
+  register: ipsec_connections_deletion
+  notify: "{{ ipsec_handler }}"
+
+- name: "remove ipsec secrets files"
+  ansible.builtin.file:
+    path: "/etc/ipsec.d/{{ item.key }}.secrets"
+    state: absent
+  loop: "{{ absent_ipsec_connections }}"
+  register: ipsec_secrets_deletion
   notify: "{{ ipsec_handler }}"
